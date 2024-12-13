@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handwriting Digit Recognition</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            background: #fff;
+        }
+        #controls {
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Handwriting Digit Recognition</h1>
+    <canvas id="canvas" width="280" height="280"></canvas>
+    <div id="controls">
+        <button onclick="clearCanvas()">Clear</button>
+        <button onclick="predictDigit()">Predict</button>
+    </div>
+    <p id="result">Prediction: None</p>
+
+    <script>
+        // Setup canvas
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+
+        canvas.addEventListener('mousedown', () => (isDrawing = true));
+        canvas.addEventListener('mouseup', () => (isDrawing = false));
+        canvas.addEventListener('mousemove', draw);
+
+        function draw(event) {
+            if (!isDrawing) return;
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(event.offsetX, event.offsetY, 8, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('result').textContent = 'Prediction: None';
+        }
+
+        async function predictDigit() {
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const input = preprocessImage(imgData);
+
+            const model = await tf.loadLayersModel('https://storage.googleapis.com/tfjs-models/tfjs/mnist/model.json');
+            const prediction = model.predict(input);
+            const digit = tf.argMax(prediction, 1).dataSync()[0];
+
+            document.getElementById('result').textContent = `Prediction: ${digit}`;
+        }
+
+        function preprocessImage(imageData) {
+            const tensor = tf.browser.fromPixels(imageData, 1)
+                .resizeNearestNeighbor([28, 28])
+                .toFloat()
+                .div(tf.scalar(255))
+                .expandDims(0);
+            return tensor;
+        }
+    </script>
+</body>
+</html>
