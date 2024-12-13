@@ -67,6 +67,7 @@
             const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const input = preprocessImage(imgData);
 
+            // Load pre-trained model from TensorFlow.js
             const model = await tf.loadLayersModel('https://storage.googleapis.com/tfjs-models/tfjs/mnist/model.json');
             const prediction = model.predict(input);
             const digit = tf.argMax(prediction, 1).dataSync()[0];
@@ -76,10 +77,10 @@
 
         function preprocessImage(imageData) {
             const tensor = tf.browser.fromPixels(imageData, 1)
-                .resizeNearestNeighbor([28, 28])
+                .resizeNearestNeighbor([28, 28])  // Resize image to 28x28
                 .toFloat()
-                .div(tf.scalar(255))
-                .expandDims(0);
+                .div(tf.scalar(255))  // Normalize the image data
+                .expandDims(0);  // Add batch dimension
             return tensor;
         }
     </script>
